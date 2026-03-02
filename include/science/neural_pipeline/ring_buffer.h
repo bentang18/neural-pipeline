@@ -33,6 +33,20 @@ public:
     return true;
   }
 
+  // pushing a pointer - faster than copying
+  auto push(T &&item) -> bool {
+    if (full()) {
+      return false;
+    }
+
+    buffer_[write_pos_.load(std::memory_order_relaxed) & mask_] =
+        std::move(item);
+
+    write_pos_.store(write_pos_.load(std::memory_order_relaxed) + 1,
+                     std::memory_order_release);
+    return true;
+  }
+
   // Try to pop an item into `out`. Returns false if empty.
   auto pop(T &out) -> bool {
     if (empty()) {

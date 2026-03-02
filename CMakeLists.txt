@@ -8,10 +8,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Library target
-add_library(neural_pipeline INTERFACE)
+add_library(neural_pipeline src/science/neural_pipeline/pipeline.cpp)
 
 target_include_directories(neural_pipeline
-  INTERFACE
+  PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
