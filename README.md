@@ -90,8 +90,14 @@ Reiterating what I learned: Seperate threads on seperate cores of the CPU loads 
 Final thoughts: the ring buffer is a template because we want just one class that works with any type. Also unsigned integers wrap to 0 when overflow so the indicies are always okay. Power of two capacity allows for efficent modulo. `memory_order_relase` and `memory_order_acquire` is valid since it enforces ordering between the paired producer and consumer, which is less work for the CPU.
 
 #### Quest 4: Creating pipeline.cpp and running first tests
+For this quest I need to create a pipeline object that starts both the consumer and producer threads, owns the buffer, and closes both threads during deconstruction. The pipeline class should be defined in a header file and the specific functions implemented in source file. Thus, main.cpp is able to create a pipeline object. Additionally, I need to create the sample class which contains the timestamp of when the sample is created and also a vector of floats for the channels. The buffer would then be instantiated with these samples as the object. Additionally for fast pushing into the buffer, instead of copying every vector of channels, we move the pointer/ownership of the channel object over to the buffer (which is O(1) instead of O(#of channels)). Finally main.cpp creates a pipeline object that runs until `Ctrl-C` is pressed which subsequently deconstructs the pipeline (and both threads). For testing, the consumer thread simply outputs the average latency of recieving each sample.
 
+#### Quest 5: Create a Producer and Processor class, owned by Pipeline
+Now that we have the pipeline skeleton working, we need to create specific Producer and Processor classes to handle generating noise + spikes, and threshold detection. The current functions are inline, we want to move them into seperate classes.
+Quick note on constructor syntax: members are variables owned by a class. Initalizer list is in the format of `Class:Class(Config config):` `class->constructor->intializer list for members`
+The producer class initalizes the channels with random gaussian noise and turns a few of those channels into spikes based off the `spike_rate_hz` and `sample_rate_hz`. The consumer class does simple threshholding to obtain the number of spikes per sample.
 
+### Quest 6: 
 
 ## Reflections
 

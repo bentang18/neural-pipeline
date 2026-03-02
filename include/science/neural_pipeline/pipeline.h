@@ -3,6 +3,8 @@
 #include <atomic>
 #include <thread>
 
+#include "science/neural_pipeline/processor.h"
+#include "science/neural_pipeline/producer.h"
 #include "science/neural_pipeline/ring_buffer.h"
 #include "science/neural_pipeline/sample.h"
 
@@ -34,6 +36,8 @@ private:
   std::atomic<bool> running_{false};
   std::thread producer_thread_;
   std::thread consumer_thread_;
+  Producer producer_;
+  Processor processor_;
 };
 
 } // namespace science::neural_pipeline
