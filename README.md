@@ -1,21 +1,43 @@
 # Neural Data Processor in C++
 
 ## Motivation
-I have coded in C++ for competitive programming for the last seven years but I have not yet taken the time to learn project-level C++ organization and production-grade coding conventions. My goal for this project is to learn how to orchestrate an end-to-end project and write clean, robust code all while creating an efficient neural data processor!
+I have coded in C++ for competitive programming for the last seven years but I have not yet taken the time to learn project-level C++ organization and coding conventions. My goal for this project is to learn how to orchestrate an end-to-end project and write clean, robust code all while creating an efficient neural data processor!
 
 ## Project Outline
 For this project I will create a neural data processor that includes three main components:
 
-- Producer: A thread that generates synthetic neural data (32 channels at 30kHz, Gaussian noise with occasional spikes), mimicking a intracranial neural probe, and pushes the data into a Ring Buffer.
+- Producer: A thread that generates synthetic neural data (32 channels at 30kHz, Gaussian noise with occasional spikes), mimicking a neural probe, and pushes the data into a Ring Buffer.
 
 - Ring Buffer: A lock-free, fixed size queue that allows the Producer and Consumer thread to communicate without mutexes.
 
 - Consumer: A thread that reads from the Ring Buffer and runs threshold based spike detection
 
 **The result is one demo executable that runs both threads, maintains the Ring Buffer, and displays live stats.**
+## Final Output
+```
+Config: 32 channels @ 30000 Hz, buffer capacity: 4096
 
+[1s] produced: 22530 | consumed: 22530 | dropped: 0 | spikes: 123 | latency: 2.96751us avg, 28us max
+[2s] produced: 45060 | consumed: 45060 | dropped: 0 | spikes: 246 | latency: 2.93502us avg, 123us max
+[3s] produced: 67620 | consumed: 67620 | dropped: 0 | spikes: 353 | latency: 2.92304us avg, 123us max
+[4s] produced: 90180 | consumed: 90180 | dropped: 0 | spikes: 473 | latency: 2.91653us avg, 179us max
+[5s] produced: 112710 | consumed: 112710 | dropped: 0 | spikes: 590 | latency: 2.92023us avg, 179us max
+[6s] produced: 135300 | consumed: 135300 | dropped: 0 | spikes: 720 | latency: 2.9152us avg, 179us max
+[7s] produced: 157830 | consumed: 157830 | dropped: 0 | spikes: 849 | latency: 2.91923us avg, 179us max
+[8s] produced: 180390 | consumed: 180390 | dropped: 0 | spikes: 970 | latency: 2.91557us avg, 179us max
+[9s] produced: 202950 | consumed: 202950 | dropped: 0 | spikes: 1095 | latency: 2.91977us avg, 179us max
+[10s] produced: 225480 | consumed: 225480 | dropped: 0 | spikes: 1214 | latency: 2.9213us avg, 179us max
+
+Final stats:
+  Total samples:   247980
+  Spikes detected: 1322
+  Samples dropped: 0
+  Avg latency:     2.9211 us
+  Max latency:     179 us
+  Spike rate:      132.2 Hz (expected: ~160 Hz)
+```
 ## Quests
-I split this project into eight quests. Each quests contains learning goals, tasks to complete, and understanding checks.
+I split this project into five quests. Each quests contains learning goals, tasks to complete, and understanding checks.
 
 #### Quest 1: Read through the Science libndtp project to understand good C++ coding conventions, project organization, and also neural data transfer protocol.
 `libndtp/include/science/libndtp/ndtp.h`
@@ -96,8 +118,7 @@ For this quest I need to create a pipeline object that starts both the consumer 
 Now that we have the pipeline skeleton working, we need to create specific Producer and Processor classes to handle generating noise + spikes, and threshold detection. The current functions are inline, we want to move them into seperate classes.
 Quick note on constructor syntax: members are variables owned by a class. Initalizer list is in the format of `Class:Class(Config config):` `class->constructor->intializer list for members`
 The producer class initalizes the channels with random gaussian noise and turns a few of those channels into spikes based off the `spike_rate_hz` and `sample_rate_hz`. The consumer class does simple threshholding to obtain the number of spikes per sample.
-
-### Quest 6: 
+Finally I have added cumulative stats to the main.cpp output.
 
 ## Reflections
 

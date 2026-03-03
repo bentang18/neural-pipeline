@@ -18,6 +18,17 @@ public:
     size_t sample_rate_hz = 30000;
   };
 
+  struct Stats {
+    uint64_t samples_produced = 0;
+    uint64_t samples_consumed = 0;
+    uint64_t samples_dropped = 0;
+    uint64_t spikes_detected = 0;
+    uint64_t max_latency = 0;
+    double avg_latency_us = 0.0;
+  };
+
+  auto stats() const -> Stats;
+
   explicit Pipeline(Config config);
   ~Pipeline(); // must join threads
 
@@ -38,6 +49,13 @@ private:
   std::thread consumer_thread_;
   Producer producer_;
   Processor processor_;
+
+  std::atomic<uint64_t> samples_produced_ = {0};
+  std::atomic<uint64_t> samples_consumed_ = {0};
+  std::atomic<uint64_t> samples_dropped_ = {0};
+  std::atomic<uint64_t> spikes_detected_ = {0};
+  std::atomic<uint64_t> latency_total_ = {0};
+  std::atomic<uint64_t> max_latency_us_ = {0};
 };
 
 } // namespace science::neural_pipeline

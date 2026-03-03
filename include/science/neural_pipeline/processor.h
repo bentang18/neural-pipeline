@@ -1,3 +1,5 @@
+#pragma once
+
 #include "science/neural_pipeline/sample.h"
 
 namespace science::neural_pipeline {
