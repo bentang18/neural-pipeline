@@ -1,40 +1,43 @@
-# Neural Data Processor in C++
+# neural-pipeline
 
-## Motivation
-I have coded in C++ for competitive programming for the last seven years but I have not yet taken the time to learn project-level C++ organization and coding conventions. My goal for this project is to learn how to orchestrate an end-to-end project and write clean, robust code all while creating an efficient neural data processor!
+Lock-free SPSC neural data pipeline with real-time spike detection in C++17.
 
-## Project Outline
-For this project I will create a neural data processor that includes three main components:
+## Architecture
 
-- Producer: A thread that generates synthetic neural data (32 channels at 30kHz, Gaussian noise with occasional spikes), mimicking a neural probe, and pushes the data into a Ring Buffer.
+```
+Producer Thread ──→ [Ring Buffer] ──→ Consumer Thread
+(30kHz synthetic     (lock-free       (threshold spike
+ neural data)         SPSC, 4096)      detection)
+```
 
-- Ring Buffer: A lock-free, fixed size queue that allows the Producer and Consumer thread to communicate without mutexes.
+## Build & Run
 
-- Consumer: A thread that reads from the Ring Buffer and runs threshold based spike detection
+```sh
+make all && make test
+./build/pipeline_demo    # Ctrl+C to stop
+```
 
-**The result is one demo executable that runs both threads, maintains the Ring Buffer, and displays live stats.**
-## Final Output
+## Design Decisions
+
+- **Lock-free ring buffer** — predictable microsecond latency; mutexes can block and cause priority inversion in real-time systems
+- **Power-of-two capacity** — enables bitmask indexing (`index & (capacity - 1)`) instead of expensive modulo division
+- **Threshold spike detection** — simple `-Nσ` voltage threshold as a first pass, matching real-system approaches before full spike sorting
+- **`alignas(64)` on atomic positions** — prevents false sharing between producer/consumer cache lines
+
+## Example Output
 ```
 Config: 32 channels @ 30000 Hz, buffer capacity: 4096
 
-[1s] produced: 22530 | consumed: 22530 | dropped: 0 | spikes: 123 | latency: 2.96751us avg, 28us max
-[2s] produced: 45060 | consumed: 45060 | dropped: 0 | spikes: 246 | latency: 2.93502us avg, 123us max
-[3s] produced: 67620 | consumed: 67620 | dropped: 0 | spikes: 353 | latency: 2.92304us avg, 123us max
-[4s] produced: 90180 | consumed: 90180 | dropped: 0 | spikes: 473 | latency: 2.91653us avg, 179us max
-[5s] produced: 112710 | consumed: 112710 | dropped: 0 | spikes: 590 | latency: 2.92023us avg, 179us max
-[6s] produced: 135300 | consumed: 135300 | dropped: 0 | spikes: 720 | latency: 2.9152us avg, 179us max
-[7s] produced: 157830 | consumed: 157830 | dropped: 0 | spikes: 849 | latency: 2.91923us avg, 179us max
-[8s] produced: 180390 | consumed: 180390 | dropped: 0 | spikes: 970 | latency: 2.91557us avg, 179us max
-[9s] produced: 202950 | consumed: 202950 | dropped: 0 | spikes: 1095 | latency: 2.91977us avg, 179us max
-[10s] produced: 225480 | consumed: 225480 | dropped: 0 | spikes: 1214 | latency: 2.9213us avg, 179us max
-
+[1s] produced: 22530 | consumed: 22530 | dropped: 0 | spikes: 123 | latency: 2.97us avg, 28us max
+[2s] produced: 45060 | consumed: 45060 | dropped: 0 | spikes: 246 | latency: 2.94us avg, 123us max
+[3s] produced: 67620 | consumed: 67620 | dropped: 0 | spikes: 353 | latency: 2.92us avg, 123us max
+^C
 Final stats:
-  Total samples:   247980
-  Spikes detected: 1322
+  Total samples:   67620
+  Spikes detected: 353
   Samples dropped: 0
-  Avg latency:     2.9211 us
-  Max latency:     179 us
-  Spike rate:      132.2 Hz (expected: ~160 Hz)
+  Avg latency:     2.92 us
+  Spike rate:      117.7 Hz (expected: ~160 Hz)
 ```
 ## Quests
 I split this project into five quests. Each quests contains learning goals, tasks to complete, and understanding checks.
@@ -121,5 +124,4 @@ The producer class initalizes the channels with random gaussian noise and turns 
 Finally I have added cumulative stats to the main.cpp output.
 
 ## Reflections
-
-
+I think the most useful part of this project was learning how to cleanly organize a C++ project. In the past I've mainly written single file .cpp code where I did not have to consider multiple classes, threads, and linked functions. Now I have gained both a high-level understanding of library structure and also knowledge of the specifc syntax for implementation. Finally, it was really fun learning about multithreading and memory cache lines, something I did not have to consider during competitive programming. Overall, this project gave me the confidence to understand and begin to write production-level code!
