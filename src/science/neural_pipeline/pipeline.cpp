@@ -9,13 +9,15 @@
 
 namespace science::neural_pipeline {
 Pipeline::Pipeline(Config config)
-    : config_(config), buffer_(config.buffer_capacity),
-      processor_(Processor::Config{}), producer_(Producer::Config{}) {}
+    : config_(config), processor_(Processor::Config{}),
+      producer_(Producer::Config{}) {
+  buffer_ok_ = buffer_.init(config.buffer_capacity);
+}
 
 Pipeline::~Pipeline() { stop(); }
 
 auto Pipeline::start() -> bool {
-  if (running_) {
+  if (running_ || !buffer_ok_) {
     return false;
   }
   running_.store(true, std::memory_order_relaxed);
@@ -35,7 +37,7 @@ auto Pipeline::stop() -> void {
 }
 
 void Pipeline::producer_loop() {
-  const size_t batch_size = config_.sample_rate_hz / 1000;  // 30 samples per ms
+  const size_t batch_size = config_.sample_rate_hz / 1000; // 30 samples per ms
   while (running_) {
     for (size_t i = 0; i < batch_size && running_; ++i) {
       auto now = std::chrono::steady_clock::now();
@@ -72,7 +74,7 @@ void Pipeline::consumer_loop() {
       }
 
       spikes_detected_.fetch_add(processor_.process(sample).spikes_detected,
-                                  std::memory_order_relaxed);
+                                 std::memory_order_relaxed);
     }
   }
 }
@@ -85,8 +87,9 @@ auto Pipeline::stats() const -> Stats {
   s.spikes_detected = spikes_detected_.load(std::memory_order_relaxed);
   s.max_latency = max_latency_us_.load(std::memory_order_relaxed);
   if (s.samples_consumed > 0) {
-    s.avg_latency_us = static_cast<double>(latency_total_.load(std::memory_order_relaxed))
-                       / static_cast<double>(s.samples_consumed);
+    s.avg_latency_us =
+        static_cast<double>(latency_total_.load(std::memory_order_relaxed)) /
+        static_cast<double>(s.samples_consumed);
   }
   return s;
 }

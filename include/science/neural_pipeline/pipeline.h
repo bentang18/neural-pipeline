@@ -44,6 +44,7 @@ private:
 
   Config config_;
   RingBuffer<Sample> buffer_;
+  bool buffer_ok_ = false;
   std::atomic<bool> running_{false};
   std::thread producer_thread_;
   std::thread consumer_thread_;

@@ -4,7 +4,8 @@
 #include <vector>
 
 TEST(RingBufferTest, BasicPushPop) {
-  science::neural_pipeline::RingBuffer<int> buf(4);
+  science::neural_pipeline::RingBuffer<int> buf;
+  buf.init(4);
   EXPECT_TRUE(buf.push(5));
   int out = 0;
   EXPECT_TRUE(buf.pop(out));
@@ -12,7 +13,8 @@ TEST(RingBufferTest, BasicPushPop) {
 }
 
 TEST(RingBufferTest, FillAndDrain) {
-  science::neural_pipeline::RingBuffer<int> buf(4);
+  science::neural_pipeline::RingBuffer<int> buf;
+  buf.init(4);
   int in[4] = {1, 2, 3, 4};
   for (int i = 0; i < 4; i++) {
     EXPECT_TRUE(buf.push(in[i]));
@@ -28,14 +30,16 @@ TEST(RingBufferTest, FillAndDrain) {
 }
 
 TEST(RingBufferTest, EmptyPop) {
-  science::neural_pipeline::RingBuffer<int> buf(4);
+  science::neural_pipeline::RingBuffer<int> buf;
+  buf.init(4);
   int out;
   EXPECT_TRUE(buf.empty());
   EXPECT_FALSE(buf.pop(out));
 }
 
 TEST(RingBufferTest, WrapAround) {
-  science::neural_pipeline::RingBuffer<int> buf(4);
+  science::neural_pipeline::RingBuffer<int> buf;
+  buf.init(4);
   int in[8] = {1, 2, 3, 4, 5, 6, 7, 8};
   for (int i = 0; i < 8; i++) {
     EXPECT_TRUE(buf.push(in[i]));
@@ -48,7 +52,8 @@ TEST(RingBufferTest, WrapAround) {
 TEST(RingBufferTest, ConcurrentAccess) {
   const int N = 100005;
   const int M = 1024;
-  science::neural_pipeline::RingBuffer<int> buf(M);
+  science::neural_pipeline::RingBuffer<int> buf;
+  buf.init(M);
   std::vector<int> out(N);
   std::thread producer([&]() {
     for (int i = 0; i < N; i++) {

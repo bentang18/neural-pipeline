@@ -1,5 +1,3 @@
-#pragma once
-
 #include "science/neural_pipeline/processor.h"
 #include "science/neural_pipeline/sample.h"
 
@@ -12,9 +10,7 @@ Processor::Processor(Config config)
 auto Processor::process(const Sample &sample) -> Result {
   Result result;
   for (auto x : sample.channels) {
-    if (x < threshold_) {
-      result.spikes_detected++;
-    }
+    result.spikes_detected += (x < threshold_);
   }
   return result;
 }

@@ -1,29 +1,32 @@
 #pragma once
 
 #include <atomic>
-#include <stdexcept>
 #include <vector>
 
 namespace science::neural_pipeline {
 
 template <typename T> class RingBuffer {
 public:
-  // Construct with given capacity (must be power of 2)
-  explicit RingBuffer(size_t capacity)
-      : capacity_(capacity), mask_(capacity - 1), buffer_(capacity),
-        write_pos_(0), read_pos_(0) {
+  RingBuffer()
+      : capacity_(0), mask_(0), buffer_(0), write_pos_(0), read_pos_(0),
+        initialized_(false) {}
+  auto init(size_t capacity) -> bool {
     if (capacity == 0 || (capacity & (capacity - 1)) != 0) {
-      throw std::invalid_argument("capacity must be power of 2");
+      return false;
     }
+    capacity_ = capacity;
+    mask_ = capacity - 1;
+    buffer_.resize(capacity);
+    initialized_ = true;
+    return true;
   }
-
   // Non-copyable, non-movable (atomics can't be copied/moved)
   RingBuffer(const RingBuffer &) = delete;
   RingBuffer &operator=(const RingBuffer &) = delete;
 
   // Try to push an item. Returns false if full.
   auto push(const T &item) -> bool {
-    if (full()) {
+    if (full() || !initialized_) {
       return false;
     }
     buffer_[write_pos_.load(std::memory_order_relaxed) & mask_] = item;
@@ -35,7 +38,7 @@ public:
 
   // pushing a pointer - faster than copying
   auto push(T &&item) -> bool {
-    if (full()) {
+    if (full() || !initialized_) {
       return false;
     }
 
@@ -49,7 +52,7 @@ public:
 
   // Try to pop an item into `out`. Returns false if empty.
   auto pop(T &out) -> bool {
-    if (empty()) {
+    if (empty() || !initialized_) {
       return false;
     }
     out = buffer_[read_pos_.load(std::memory_order_relaxed) & mask_];
@@ -74,6 +77,7 @@ private:
   std::vector<T> buffer_;
   alignas(64) std::atomic<size_t> write_pos_;
   alignas(64) std::atomic<size_t> read_pos_;
+  bool initialized_;
 };
 
 } // namespace science::neural_pipeline

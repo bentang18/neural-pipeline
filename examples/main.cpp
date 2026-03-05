@@ -26,13 +26,17 @@ int main() {
             << config.sample_rate_hz << " Hz, buffer capacity: "
             << config.buffer_capacity << "\n\n";
 
-  pipeline.start();
+  if (!pipeline.start()) {
+    std::cerr << "Failed to start pipeline\n";
+    return 1;
+  }
+  auto start_time = std::chrono::steady_clock::now();
 
-  int seconds = 0;
   while (!g_shutdown.load(std::memory_order_relaxed)) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     if (g_shutdown.load(std::memory_order_relaxed)) break;
-    seconds++;
+    auto elapsed = std::chrono::steady_clock::now() - start_time;
+    auto seconds = std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     auto s = pipeline.stats();
     std::cout << "[" << seconds << "s]"
               << " produced: " << s.samples_produced
@@ -46,7 +50,8 @@ int main() {
   pipeline.stop();
 
   auto s = pipeline.stats();
-  double runtime_s = static_cast<double>(seconds);
+  auto elapsed = std::chrono::steady_clock::now() - start_time;
+  double runtime_s = std::chrono::duration<double>(elapsed).count();
   std::cout << "\nFinal stats:\n";
   std::cout << "  Total samples:   " << s.samples_consumed << "\n";
   std::cout << "  Spikes detected: " << s.spikes_detected << "\n";
