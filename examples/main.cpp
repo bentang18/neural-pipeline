@@ -23,8 +23,8 @@ int main() {
   std::cout << "neural-pipeline demo\n";
   std::cout << "====================\n";
   std::cout << "Config: " << config.num_channels << " channels @ "
-            << config.sample_rate_hz << " Hz, buffer capacity: "
-            << config.buffer_capacity << "\n\n";
+            << config.sample_rate_hz
+            << " Hz, buffer capacity: " << config.buffer_capacity << "\n\n";
 
   if (!pipeline.start()) {
     std::cerr << "Failed to start pipeline\n";
@@ -34,9 +34,12 @@ int main() {
 
   while (!g_shutdown.load(std::memory_order_relaxed)) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    if (g_shutdown.load(std::memory_order_relaxed)) break;
+    if (g_shutdown.load(std::memory_order_relaxed)) {
+      break;
+    }
     auto elapsed = std::chrono::steady_clock::now() - start_time;
-    auto seconds = std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    auto seconds =
+        std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     auto s = pipeline.stats();
     std::cout << "[" << seconds << "s]"
               << " produced: " << s.samples_produced

@@ -13,9 +13,11 @@ using science::neural_pipeline::SocketTransport;
 
 std::atomic_bool g_shutdown{false};
 
-void signal_handler(int /*signum*/) { g_shutdown.store(true, std::memory_order_relaxed); }
+void signal_handler(int /*signum*/) {
+  g_shutdown.store(true, std::memory_order_relaxed);
+}
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   std::signal(SIGINT, signal_handler);
 
   std::string socket_path = "/tmp/neural_pipeline.sock";
@@ -50,7 +52,8 @@ int main(int argc, char* argv[]) {
 
     auto now = std::chrono::steady_clock::now();
     auto now_us =
-        std::chrono::duration_cast<std::chrono::microseconds>(now - start_time).count();
+        std::chrono::duration_cast<std::chrono::microseconds>(now - start_time)
+            .count();
     uint64_t latency_us = static_cast<uint64_t>(now_us) - sample.timestamp_us;
 
     auto result = processor.process(sample);
@@ -61,13 +64,20 @@ int main(int argc, char* argv[]) {
       max_latency_us = latency_us;
     }
 
-    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - last_print);
+    auto elapsed =
+        std::chrono::duration_cast<std::chrono::seconds>(now - last_print);
     if (elapsed.count() >= 1) {
-      uint64_t avg_latency = samples_received > 0 ? latency_total_us / samples_received : 0;
-      std::cout << "[" << std::chrono::duration_cast<std::chrono::seconds>(now - start_time).count()
+      uint64_t avg_latency =
+          samples_received > 0 ? latency_total_us / samples_received : 0;
+      std::cout << "["
+                << std::chrono::duration_cast<std::chrono::seconds>(now -
+                                                                    start_time)
+                       .count()
                 << "s]"
-                << " received: " << samples_received << " | spikes: " << spikes_detected
-                << " | latency: " << avg_latency << "us avg, " << max_latency_us << "us max\n";
+                << " received: " << samples_received
+                << " | spikes: " << spikes_detected
+                << " | latency: " << avg_latency << "us avg, " << max_latency_us
+                << "us max\n";
       last_print = now;
     }
   }
@@ -79,12 +89,13 @@ int main(int argc, char* argv[]) {
   std::cout << "  Total samples:   " << samples_received << "\n";
   std::cout << "  Spikes detected: " << spikes_detected << "\n";
   if (samples_received > 0) {
-    std::cout << "  Avg latency:     " << latency_total_us / samples_received << " us\n";
+    std::cout << "  Avg latency:     " << latency_total_us / samples_received
+              << " us\n";
   }
   std::cout << "  Max latency:     " << max_latency_us << " us\n";
   if (runtime_s > 0) {
-    std::cout << "  Spike rate:      " << static_cast<double>(spikes_detected) / runtime_s
-              << " Hz\n";
+    std::cout << "  Spike rate:      "
+              << static_cast<double>(spikes_detected) / runtime_s << " Hz\n";
   }
   return 0;
 }

@@ -8,8 +8,9 @@
 using science::neural_pipeline::Sample;
 using science::neural_pipeline::SocketTransport;
 
-static std::string unique_socket_path(const std::string& test_name) {
-  return "/tmp/neural_pipeline_test_" + test_name + "_" + std::to_string(getpid()) + ".sock";
+static std::string unique_socket_path(const std::string &test_name) {
+  return "/tmp/neural_pipeline_test_" + test_name + "_" +
+         std::to_string(getpid()) + ".sock";
 }
 
 TEST(SocketTransportTest, ConnectAndSend) {
@@ -78,7 +79,8 @@ TEST(SocketTransportTest, MultiSampleStream) {
     EXPECT_EQ(received.timestamp_us, static_cast<uint64_t>(i) * 1000);
     ASSERT_EQ(received.channels.size(), static_cast<size_t>(kNumChannels));
     for (int c = 0; c < kNumChannels; ++c) {
-      EXPECT_FLOAT_EQ(received.channels[c], static_cast<float>(i * kNumChannels + c));
+      EXPECT_FLOAT_EQ(received.channels[c],
+                      static_cast<float>(i * kNumChannels + c));
     }
   }
 

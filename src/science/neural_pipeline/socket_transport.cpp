@@ -22,9 +22,10 @@ auto SocketTransport::listen_and_accept() -> bool {
 
   sockaddr_un addr{};
   addr.sun_family = AF_UNIX;
-  std::strncpy(addr.sun_path, config_.socket_path.c_str(), sizeof(addr.sun_path) - 1);
+  std::strncpy(addr.sun_path, config_.socket_path.c_str(),
+               sizeof(addr.sun_path) - 1);
 
-  if (bind(listen_fd_, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
+  if (bind(listen_fd_, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
     return false;
   }
   if (listen(listen_fd_, 1) < 0) {
@@ -43,34 +44,42 @@ auto SocketTransport::connect() -> bool {
 
   sockaddr_un addr{};
   addr.sun_family = AF_UNIX;
-  std::strncpy(addr.sun_path, config_.socket_path.c_str(), sizeof(addr.sun_path) - 1);
+  std::strncpy(addr.sun_path, config_.socket_path.c_str(),
+               sizeof(addr.sun_path) - 1);
 
-  return ::connect(conn_fd_, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0;
+  return ::connect(conn_fd_, reinterpret_cast<sockaddr *>(&addr),
+                   sizeof(addr)) == 0;
 }
 
-auto SocketTransport::send(const Sample& sample) -> bool {
+auto SocketTransport::send(const Sample &sample) -> bool {
   uint64_t timestamp = sample.timestamp_us;
   uint32_t num_channels = static_cast<uint32_t>(sample.channels.size());
 
-  if (!write_all(&timestamp, sizeof(timestamp))) return false;
-  if (!write_all(&num_channels, sizeof(num_channels))) return false;
+  if (!write_all(&timestamp, sizeof(timestamp)))
+    return false;
+  if (!write_all(&num_channels, sizeof(num_channels)))
+    return false;
   if (num_channels > 0) {
-    if (!write_all(sample.channels.data(), num_channels * sizeof(float))) return false;
+    if (!write_all(sample.channels.data(), num_channels * sizeof(float)))
+      return false;
   }
   return true;
 }
 
-auto SocketTransport::receive(Sample& sample) -> bool {
+auto SocketTransport::receive(Sample &sample) -> bool {
   uint64_t timestamp = 0;
   uint32_t num_channels = 0;
 
-  if (!read_all(&timestamp, sizeof(timestamp))) return false;
-  if (!read_all(&num_channels, sizeof(num_channels))) return false;
+  if (!read_all(&timestamp, sizeof(timestamp)))
+    return false;
+  if (!read_all(&num_channels, sizeof(num_channels)))
+    return false;
 
   sample.timestamp_us = timestamp;
   sample.channels.resize(num_channels);
   if (num_channels > 0) {
-    if (!read_all(sample.channels.data(), num_channels * sizeof(float))) return false;
+    if (!read_all(sample.channels.data(), num_channels * sizeof(float)))
+      return false;
   }
   return true;
 }
@@ -87,13 +96,14 @@ auto SocketTransport::close() -> void {
   }
 }
 
-auto SocketTransport::write_all(const void* buf, size_t len) -> bool {
-  auto* ptr = static_cast<const uint8_t*>(buf);
+auto SocketTransport::write_all(const void *buf, size_t len) -> bool {
+  auto *ptr = static_cast<const uint8_t *>(buf);
   size_t remaining = len;
   while (remaining > 0) {
     ssize_t n = ::write(conn_fd_, ptr, remaining);
     if (n < 0) {
-      if (errno == EINTR) continue;
+      if (errno == EINTR)
+        continue;
       return false;
     }
     ptr += n;
@@ -102,14 +112,15 @@ auto SocketTransport::write_all(const void* buf, size_t len) -> bool {
   return true;
 }
 
-auto SocketTransport::read_all(void* buf, size_t len) -> bool {
-  auto* ptr = static_cast<uint8_t*>(buf);
+auto SocketTransport::read_all(void *buf, size_t len) -> bool {
+  auto *ptr = static_cast<uint8_t *>(buf);
   size_t remaining = len;
   while (remaining > 0) {
     ssize_t n = ::read(conn_fd_, ptr, remaining);
     if (n <= 0) {
-      if (n < 0 && errno == EINTR) continue;
-      return false;  // EOF or error
+      if (n < 0 && errno == EINTR)
+        continue;
+      return false; // EOF or error
     }
     ptr += n;
     remaining -= static_cast<size_t>(n);
@@ -117,4 +128,4 @@ auto SocketTransport::read_all(void* buf, size_t len) -> bool {
   return true;
 }
 
-}  // namespace science::neural_pipeline
+} // namespace science::neural_pipeline
