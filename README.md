@@ -90,5 +90,68 @@ Quick note on constructor syntax: members are variables owned by a class. Initia
 The producer class initializes the channels with random Gaussian noise and turns a few of those channels into spikes based off the `spike_rate_hz` and `sample_rate_hz`. The processor class does simple thresholding to obtain the number of spikes per sample.
 Finally I have added cumulative stats to the main.cpp output.
 
+## Multi-Process Streaming Pipeline
+
+Calvin's follow-up exercise: "try a streaming pipeline where nodes exist as different processes!"
+
+### Architecture
+
+```
+[Producer Process] ──unix socket──→ [Processor Process]
+ (binds + listens)                   (connects)
+  generate()                          process() + stats
+  send(sample)                        receive(sample)
+```
+
+Each node is a separate binary. The producer is the server (data source owns the socket, like how Science Corp devices own their ZMQ endpoints). They communicate over a Unix domain socket using a simple binary wire format:
+
+```
+[uint64_t timestamp_us][uint32_t num_channels][float channels[N]]
+ 8 bytes                4 bytes                N*4 bytes
+```
+
+### Build & Run
+
+```sh
+make all && make test
+
+# Terminal 1:
+./build/producer_node
+
+# Terminal 2:
+./build/processor_node
+```
+
+### Example Output
+```
+# Producer
+producer_node: waiting for connection on /tmp/neural_pipeline.sock
+producer_node: connected!
+producer_node: sent 18211 samples
+producer_node: sent 36931 samples
+
+# Processor
+processor_node: connecting to /tmp/neural_pipeline.sock
+processor_node: connected!
+[1s] received: 18211 | spikes: 95 | latency: 237us avg, 3160us max
+[2s] received: 36931 | spikes: 207 | latency: 224us avg, 3160us max
+[3s] received: 54901 | spikes: 289 | latency: 235us avg, 8265us max
+```
+
+### Design Decisions
+
+- **Unix domain sockets over shared memory** -- simpler, no external deps, same throughput is fine (~4 MB/s), trivially portable to TCP for network streaming
+- **`SOCK_STREAM` over `SOCK_DGRAM`** -- stream sockets guarantee ordered delivery and natural backpressure (send blocks when kernel buffer full). Datagrams could lose data silently
+- **Simple binary over protobuf** -- no serialization library needed for same-machine IPC. For cross-machine/cross-language, you'd use protobuf (which is what Science Corp migrated to internally)
+- **Producer is server** -- data source owns the endpoint, mirrors Science Corp's device architecture where the headstage is the data source
+- **Partial read/write loops** -- `read()`/`write()` on stream sockets can transfer fewer bytes than requested, so `write_all()`/`read_all()` loop until all bytes are transferred
+- **`SIGPIPE` ignored** -- when processor disconnects, producer's `write()` would normally kill the process via SIGPIPE. Ignoring it makes `write()` return -1 with `errno=EPIPE`, which we handle gracefully
+
+### What I Learned
+
+The thread-based pipeline had ~3us avg latency (shared memory via ring buffer). The socket-based pipeline has ~235us -- about 80x slower. This is the cost of kernel-mediated IPC: two context switches + buffer copies per message. In a real system, you'd choose threads for ultra-low-latency same-machine processing and processes for isolation, fault tolerance, or when stages need to run on different machines.
+
+The `SocketTransport` class follows the same two-phase init / bool-return error handling pattern as the rest of the project. The node binaries are thin wrappers -- all logic lives in the tested library (`SocketTransport`, `Producer`, `Processor`).
+
 ## Reflections
 I think the most useful part of this project was learning how to cleanly organize a C++ project. In the past I've mainly written single file .cpp code where I did not have to consider multiple classes, threads, and linked functions. Now I have gained both a high-level understanding of library structure and also knowledge of the specific syntax for implementation. Finally, it was really fun learning about multithreading and memory cache lines, something I did not have to consider during competitive programming. Overall, this project gave me the confidence to understand and begin to write production-level code!
