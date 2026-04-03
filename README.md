@@ -2,6 +2,11 @@
 
 Lock-free SPSC neural data pipeline with real-time spike detection in C++17.
 
+## Zero copy IPC: O(1) transmission (as a function of message size)
+
+
+
+
 ## Architecture
 
 ```
