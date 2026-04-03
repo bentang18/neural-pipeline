@@ -11,7 +11,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_library(neural_pipeline
 src/science/neural_pipeline/pipeline.cpp
 src/science/neural_pipeline/producer.cpp
-src/science/neural_pipeline/processor.cpp)
+src/science/neural_pipeline/processor.cpp
+src/science/neural_pipeline/shm_transport.cpp)
 
 target_include_directories(neural_pipeline
   PUBLIC
@@ -31,6 +32,7 @@ FetchContent_MakeAvailable(googletest)
 # Test executable
 add_executable(neural_pipeline_tests
   test/test_ring_buffer.cpp
+  test/test_shm_transport.cpp
 )
 target_link_libraries(neural_pipeline_tests
   PRIVATE neural_pipeline gtest_main
@@ -41,5 +43,29 @@ add_executable(pipeline_demo
   examples/main.cpp
 )
 target_link_libraries(pipeline_demo
+  PRIVATE neural_pipeline
+)
+
+# Shared memory producer node
+add_executable(producer_node
+  examples/producer_node.cpp
+)
+target_link_libraries(producer_node
+  PRIVATE neural_pipeline
+)
+
+# Shared memory processor node
+add_executable(processor_node
+  examples/processor_node.cpp
+)
+target_link_libraries(processor_node
+  PRIVATE neural_pipeline
+)
+
+# Shared memory benchmark
+add_executable(shm_bench
+  examples/shm_bench.cpp
+)
+target_link_libraries(shm_bench
   PRIVATE neural_pipeline
 )

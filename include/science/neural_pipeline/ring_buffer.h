@@ -10,6 +10,7 @@ public:
   RingBuffer()
       : capacity_(0), mask_(0), buffer_(0), write_pos_(0), read_pos_(0),
         initialized_(false) {}
+
   auto init(size_t capacity) -> bool {
     if (capacity == 0 || (capacity & (capacity - 1)) != 0) {
       return false;
@@ -20,6 +21,7 @@ public:
     initialized_ = true;
     return true;
   }
+  
   // Non-copyable, non-movable (atomics can't be copied/moved)
   RingBuffer(const RingBuffer &) = delete;
   RingBuffer &operator=(const RingBuffer &) = delete;
